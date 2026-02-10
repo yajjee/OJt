@@ -10,22 +10,43 @@
 <body>
 
 <div id="app">
-  <!-- Auth (Register) -->
-  <div v-if="route === 'register'" class="auth-layout">
+  <!-- Auth (Login / Register) -->
+  <div v-if="route === 'login' || route === 'register'" class="auth-layout">
     <div class="auth-card">
       <header><h1>Vehicle Counter</h1></header>
 
-      <input type="text" placeholder="Username" v-model.trim="username">
-      <input type="password" placeholder="Password" v-model="password">
-      <input type="password" placeholder="Confirm Password" v-model="confirmpassword">
-
-      <div class="otp">
-        <input type="text" placeholder="Contact Number" v-model.trim="contactnumber">
-        <input type="text" placeholder="OTP" v-model.trim="enteredOtp">
-        <button class="sendOTPbutton" @click="sendOtp">Send</button>
+      <!-- LOGIN FORM -->
+      <div v-if="route === 'login'">
+        <input type="text" placeholder="Username" v-model.trim="username">
+        <input type="password" placeholder="Password" v-model="password">
+        <button @click="login">Login</button>
+        <p class="switch-auth">
+          Don't have an account?
+          <button class="link-button" @click="goToRegister"><a href="#register">Register</a></button>
+        </p>
       </div>
 
-      <button @click="register">Register</button>
+      <!-- REGISTER FORM -->
+      <div v-else>
+        <input type="text" placeholder="Username" v-model.trim="username">
+        <input type="password" placeholder="Password" v-model="password">
+        <p class="password-hint" :class="passwordStrengthClass" v-if="password">
+          Strength: {{ passwordStrength }}
+        </p>
+        <input type="password" placeholder="Confirm Password" v-model="confirmpassword">
+
+        <div class="otp">
+          <input type="text" placeholder="Contact Number" v-model.trim="contactnumber">
+          <input type="text" placeholder="OTP" v-model.trim="enteredOtp">
+          <button class="sendOTPbutton" @click="sendOtp">Send</button>
+        </div>
+
+        <button @click="register">Register</button>
+        <p class="switch-auth">
+          Already have an account?
+          <button class="link-button" @click="goToLogin"><a href="#login">Login</a></button>
+        </p>
+      </div>
 
       <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
       <p class="success" v-if="successMessage">{{ successMessage }}</p>
@@ -64,7 +85,7 @@
         <div class="vehicle-card add-vehicle-card">
           <div class="counter">
             <p>Add Vehicle</p>
-            <button @click="addVehicle">＋</button>
+            <button @click="openVehicleModal">＋</button>
           </div>
         </div>
       </div>
@@ -96,6 +117,33 @@
       </div>
     </div>
   </div>
+
+  <!-- Add Vehicle Modal -->
+  <div v-if="showVehicleModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Add Vehicle</h2>
+      <label>
+        Vehicle name
+        <input type="text" v-model.trim="newVehicleName" placeholder="e.g. Bus">
+      </label>
+      <label>
+        Type
+        <select v-model="newVehicleType">
+          <option value="">Select type</option>
+          <option value="truck">Truck</option>
+          <option value="motorcycle">Motorcycle</option>
+          <option value="tricycle">Tricycle</option>
+          <option value="pedicab">Pedicab</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button @click="confirmAddVehicle">Add</button>
+        <button @click="closeVehicleModal">Cancel</button>
+      </div>
+      <p class="error" v-if="modalError">{{ modalError }}</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -105,8 +153,8 @@ createApp({
   data() {
     return {
       // Simple "router" using the URL hash:
-      // - #register, #dashboard, #summary
-      route: "register",
+      // - #login, #register, #dashboard, #summary
+      route: "login",
 
       // Register form fields
       username: "",
@@ -134,13 +182,50 @@ createApp({
         motorcycle: 0,
         tricycle: 0,
         pedicab: 0
-      }
+      },
+
+      // Add-vehicle modal state
+      showVehicleModal: false,
+      newVehicleName: "",
+      newVehicleType: "",
+      modalError: ""
     };
   },
   computed: {
     isLoggedIn() {
       // Any non-empty currentUser means "logged in"
       return !!this.currentUser;
+    },
+    passwordStrength() {
+      const pwd = this.password || "";
+      const lengthScore = pwd.length;
+      const hasLetters = /[A-Za-z]/.test(pwd);
+      const hasNumbers = /\d/.test(pwd);
+      const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+
+      if (!pwd) return "";
+
+      if (lengthScore < 8 || !hasLetters || !hasNumbers) {
+        return "Weak (use at least 8 characters, letters and numbers)";
+      }
+
+      if (lengthScore >= 8 && lengthScore < 10 && hasLetters && hasNumbers && !hasSpecial) {
+        return "Medium (good, but add more length or a special character to make it stronger)";
+      }
+
+      if (lengthScore >= 10 && hasLetters && hasNumbers && hasSpecial) {
+        return "Strong";
+      }
+
+      return "Medium";
+    },
+    passwordStrengthClass() {
+      const text = this.passwordStrength || "";
+      if (!text) return "";
+      if (text.startsWith("Weak")) return "password-weak";
+      if (text.startsWith("Medium")) return "password-medium";
+      if (text.startsWith("Strong")) return "password-strong";
+      return "";
     },
     vehicleCards() {
       // Default vehicle cards + metadata (labels/images).
@@ -182,24 +267,28 @@ createApp({
     }
   },
   mounted() {
-    // Load vehicle counts from localStorage (shared across dashboard + summary)
-    const storedVehicles = JSON.parse(localStorage.getItem("vehiclesData"));
-    if (storedVehicles && typeof storedVehicles === "object") {
-      this.vehicles = storedVehicles;
+    // Decide initial route based on login status
+    if (this.isLoggedIn) {
+      this.route = "dashboard";
+    } else {
+      this.route = "login";
     }
+
+    // Load vehicle counts for the current user
+    this.loadVehiclesForCurrentUser();
 
     // Keep `route` synced with URL hash and guard protected pages
     const syncRouteFromHash = () => {
       const hash = (window.location.hash || "").replace("#", "");
-      const allowed = new Set(["register", "dashboard", "summary"]);
-      const desiredRaw = hash || (this.isLoggedIn ? "dashboard" : "register");
-      const desired = allowed.has(desiredRaw) ? desiredRaw : (this.isLoggedIn ? "dashboard" : "register");
+      const allowed = new Set(["login", "register", "dashboard", "summary"]);
+      const desiredRaw = hash || (this.isLoggedIn ? "dashboard" : "login");
+      const desired = allowed.has(desiredRaw) ? desiredRaw : (this.isLoggedIn ? "dashboard" : "login");
       this.route = desired;
 
       // Guard: must be logged in to view dashboard/summary
       if (!this.isLoggedIn && (this.route === "dashboard" || this.route === "summary")) {
-        this.route = "register";
-        window.location.hash = "#register";
+        this.route = "login";
+        window.location.hash = "#login";
       }
     };
 
@@ -207,6 +296,33 @@ createApp({
     syncRouteFromHash();
   },
   methods: {
+    userVehiclesKey(username) {
+      return `vehiclesData_${username}`;
+    },
+    loadVehiclesForCurrentUser() {
+      if (!this.currentUser) {
+        // default blank vehicles if no user
+        this.vehicles = {
+          truck: 0,
+          motorcycle: 0,
+          tricycle: 0,
+          pedicab: 0
+        };
+        return;
+      }
+      const key = this.userVehiclesKey(this.currentUser);
+      const storedVehicles = JSON.parse(localStorage.getItem(key));
+      if (storedVehicles && typeof storedVehicles === "object") {
+        this.vehicles = storedVehicles;
+      } else {
+        this.vehicles = {
+          truck: 0,
+          motorcycle: 0,
+          tricycle: 0,
+          pedicab: 0
+        };
+      }
+    },
     sendOtp() {
       // Demo OTP sender (no SMS integration)
       if (!this.contactnumber || this.contactnumber.toString().length !== 10) {
@@ -219,6 +335,50 @@ createApp({
       this.successMessage = "OTP sent! Check alert box.";
       this.errorMessage = "";
     },
+    goToLogin() {
+      this.errorMessage = "";
+      this.successMessage = "";
+      this.password = "";
+      this.confirmpassword = "";
+      this.enteredOtp = null;
+      this.route = "login";
+      window.location.hash = "#login";
+    },
+    goToRegister() {
+      this.errorMessage = "";
+      this.successMessage = "";
+      this.password = "";
+      this.confirmpassword = "";
+      this.enteredOtp = null;
+      this.route = "register";
+      window.location.hash = "#register";
+    },
+    login() {
+      this.errorMessage = "";
+      this.successMessage = "";
+
+      if (!this.username || !this.password) {
+        this.errorMessage = "Username and password are required";
+        return;
+      }
+
+      const user = this.users.find(
+        u => u.username === this.username && u.password === this.password
+      );
+
+      if (!user) {
+        this.errorMessage = "Invalid username or password";
+        return;
+      }
+
+      this.currentUser = user.username;
+      localStorage.setItem("currentUser", this.currentUser);
+      this.loadVehiclesForCurrentUser();
+      this.successMessage = "Login successful!";
+      setTimeout(() => {
+        window.location.hash = "#dashboard";
+      }, 500);
+    },
     register() {
       // Register + "log in" the user
       this.errorMessage = "";
@@ -229,12 +389,30 @@ createApp({
         this.errorMessage = "All fields are required";
         return;
       }
+      // Username validation: minimum 5 letters
+      if (this.username.length < 5 || !/^[A-Za-z]+$/.test(this.username)) {
+        this.errorMessage = "Username must be at least 5 letters and contain only letters (A–Z)";
+        return;
+      }
+      // Password validation: at least 8 chars, alphanumeric
+      const hasLetters = /[A-Za-z]/.test(this.password);
+      const hasNumbers = /\d/.test(this.password);
+      if (this.password.length < 8 || !hasLetters || !hasNumbers) {
+        this.errorMessage = "Password is too weak. It must be at least 8 characters and contain both letters and numbers.";
+        return;
+      }
       if (this.password !== this.confirmpassword) {
         this.errorMessage = "Passwords do not match";
         return;
       }
-      if (this.contactnumber.toString().length !== 10) {
-        this.errorMessage = "Invalid contact number";
+      // Contact number validation: 10 digits, starting with 9 (for +63 9XXXXXXXXX format)
+      const contactStr = this.contactnumber.toString();
+      if (contactStr.length !== 10 || !/^\d+$/.test(contactStr)) {
+        this.errorMessage = "Invalid contact number. It must be 10 digits.";
+        return;
+      }
+      if (!contactStr.startsWith("9")) {
+        this.errorMessage = "Invalid contact number. In +63 format it should start with 9 (e.g. 9XXXXXXXXX).";
         return;
       }
       if (parseInt(this.enteredOtp) !== this.otp) {
@@ -252,6 +430,8 @@ createApp({
       localStorage.setItem("users", JSON.stringify(this.users));
       this.currentUser = this.username;
       localStorage.setItem("currentUser", this.currentUser);
+       // Create a fresh vehicle set for this new user
+      this.loadVehiclesForCurrentUser();
       this.successMessage = "Registered successfully!";
       setTimeout(() => {
         // Navigate to dashboard inside the single-page app
@@ -263,8 +443,8 @@ createApp({
       // End demo session and return to register screen
       localStorage.removeItem("currentUser");
       this.currentUser = "";
-      this.route = "register";
-      window.location.hash = "#register";
+      this.route = "login";
+      window.location.hash = "#login";
     },
     increment(vehicleKey, delta) {
       // Increase/decrease count, never below 0
@@ -272,10 +452,23 @@ createApp({
       const next = Math.max(0, current + delta);
       this.vehicles[vehicleKey] = next;
     },
-    addVehicle() {
-      // Add a new vehicle key safely (Vue 3 can track new object keys)
-      const vehicleNameRaw = prompt("Enter the name of the new vehicle:");
-      if (!vehicleNameRaw) return;
+    openVehicleModal() {
+      this.newVehicleName = "";
+      this.newVehicleType = "";
+      this.modalError = "";
+      this.showVehicleModal = true;
+    },
+    closeVehicleModal() {
+      this.showVehicleModal = false;
+    },
+    confirmAddVehicle() {
+      this.modalError = "";
+      const vehicleNameRaw = this.newVehicleName;
+
+      if (!vehicleNameRaw) {
+        this.modalError = "Vehicle name is required";
+        return;
+      }
 
       // Normalize input into a safe key: lowercase, underscores, alphanumerics only
       const key = vehicleNameRaw
@@ -284,14 +477,18 @@ createApp({
         .replace(/\s+/g, "_")
         .replace(/[^a-z0-9_]/g, "");
 
-      if (!key) return;
+      if (!key) {
+        this.modalError = "Vehicle name is invalid";
+        return;
+      }
 
       if (Object.prototype.hasOwnProperty.call(this.vehicles, key)) {
-        alert("That vehicle already exists.");
+        this.modalError = "That vehicle already exists.";
         return;
       }
 
       this.vehicles[key] = 0;
+      this.showVehicleModal = false;
     },
     clearCounts() {
       // Reset all vehicle counts back to 0
@@ -303,7 +500,9 @@ createApp({
     },
     saveVehicles() {
       // Persist counts so summary/dashboard stay in sync across refreshes
-      localStorage.setItem("vehiclesData", JSON.stringify(this.vehicles));
+      if (!this.currentUser) return;
+      const key = this.userVehiclesKey(this.currentUser);
+      localStorage.setItem(key, JSON.stringify(this.vehicles));
     }
   },
   watch: {
@@ -313,6 +512,9 @@ createApp({
         // Auto-save whenever any vehicle count changes
         this.saveVehicles();
       }
+    },
+    currentUser() {
+      this.loadVehiclesForCurrentUser();
     }
   }
 }).mount("#app");

@@ -77,6 +77,25 @@ body {
   margin-top: 10px;
 }
 
+.password-hint {
+  margin: -4px 0 6px;
+  font-size: 12px;
+  color: #555;
+  text-align: left;
+}
+
+.password-weak {
+  color: #e53935; /* red */
+}
+
+.password-medium {
+  color: #fb8c00; /* orange */
+}
+
+.password-strong {
+  color: #43a047; /* green */
+}
+
 /* ===== Navbar (Dashboard/Summary) ===== */
 nav {
   display: flex;
@@ -239,4 +258,94 @@ th {
   border-radius: 5px;
   cursor: pointer;
   margin-top: 5px;
+}
+
+/* ===== Auth link buttons (Login/Register switch) ===== */
+.switch-auth {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.link-button {
+  background: transparent !important;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  color: #e8e1ed;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: #a41bff;
+}
+
+/* ===== Modal for Add Vehicle ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  padding: 24px 28px;
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+
+.modal label {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.modal label input,
+.modal label select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modal-actions button:first-child {
+  background: #4caf50;
+}
+
+.modal-actions button:first-child:hover {
+  background: #3f9140;
+}
+
+.modal-actions button:last-child {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-actions button:last-child:hover {
+  background: #c7c7c7;
 }
