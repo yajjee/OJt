@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="app.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Counter</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+
+<div id="app">
+  <!-- Auth (Register) -->
+  <div v-if="route === 'register'" class="auth-layout">
+    <div class="auth-card">
+      <header><h1>Vehicle Counter</h1></header>
+
+      <input type="text" placeholder="Username" v-model.trim="username">
+      <input type="password" placeholder="Password" v-model="password">
+      <input type="password" placeholder="Confirm Password" v-model="confirmpassword">
+
+      <div class="otp">
+        <input type="text" placeholder="Contact Number" v-model.trim="contactnumber">
+        <input type="text" placeholder="OTP" v-model.trim="enteredOtp">
+        <button class="sendOTPbutton" @click="sendOtp">Send</button>
+      </div>
+
+      <button @click="register">Register</button>
+
+      <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
+      <p class="success" v-if="successMessage">{{ successMessage }}</p>
+    </div>
+  </div>
+
+  <!-- App (Dashboard/Summary) -->
+  <div v-else>
+    <nav>
+      <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/776/776588.png" />
+        <strong>Vehicle Counter</strong>
+      </div>
+      <div class="nav-links">
+        <a href="#dashboard" :style="route === 'dashboard' ? 'text-decoration: underline;' : ''">Home</a>
+        <a href="#summary" :style="route === 'summary' ? 'text-decoration: underline;' : ''">Summary</a>
+        <button @click="logout">Logout</button>
+      </div>
+    </nav>
+
+    <!-- Dashboard -->
+    <div v-if="route === 'dashboard'">
+      <h1 class="content">Dashboard</h1>
+
+      <div class="card-container">
+        <div class="vehicle-card" v-for="v in vehicleCards" :key="v.key">
+          <img :src="v.img" :alt="v.label">
+          <div class="counter">
+            <p>{{ v.label }}</p>
+            <h2>{{ vehicles[v.key] ?? 0 }}</h2>
+            <button @click="increment(v.key, +1)">+</button>
+            <button @click="increment(v.key, -1)" :disabled="(vehicles[v.key] ?? 0) === 0">−</button>
+          </div>
+        </div>
+
+        <div class="vehicle-card add-vehicle-card">
+          <div class="counter">
+            <p>Add Vehicle</p>
+            <button @click="addVehicle">＋</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div v-else-if="route === 'summary'">
+      <h1 class="content">Vehicle Summary</h1>
+
+      <div class="summary-content">
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(count, vehicle) in vehicles" :key="vehicle">
+              <td>{{ vehicle.charAt(0).toUpperCase() + vehicle.slice(1) }}</td>
+              <td>{{ count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="clear" @click="clearCounts">Clear All Counts</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      // Simple "router" using the URL hash:
+      // - #register, #dashboard, #summary
+      route: "register",
+
+      // Register form fields
+      username: "",
+      password: "",
+      confirmpassword: "",
+      contactnumber: "",
+
+      // OTP is demo-only (shown in alert)
+      otp: null,          // generated OTP
+      enteredOtp: null,   // OTP entered by user
+
+      // UI messages for validation feedback
+      errorMessage: "",
+      successMessage: "",
+
+      // Stored users (demo-only storage in localStorage)
+      users: JSON.parse(localStorage.getItem("users")) || [],
+
+      // "Session" for this demo: if present, user is considered logged in
+      currentUser: localStorage.getItem("currentUser") || "",
+
+      // Vehicle counts (auto-saved to localStorage as "vehiclesData")
+      vehicles: {
+        truck: 0,
+        motorcycle: 0,
+        tricycle: 0,
+        pedicab: 0
+      }
+    };
+  },
+  computed: {
+    isLoggedIn() {
+      // Any non-empty currentUser means "logged in"
+      return !!this.currentUser;
+    },
+    vehicleCards() {
+      // Default vehicle cards + metadata (labels/images).
+      // Any extra vehicles added by the user will also show up.
+      const knownMeta = [
+        {
+          key: "truck",
+          label: "Truck",
+          img: "https://assets-v2.lottiefiles.com/a/13d20d82-116b-11ee-8327-bf0f670c5933/UnKFqiCVck.gif"
+        },
+        {
+          key: "motorcycle",
+          label: "Motorcycle",
+          img: "https://cdn.dribbble.com/userupload/21376896/file/original-db00ef235443c282045c0e473a5cb689.gif"
+        },
+        {
+          key: "tricycle",
+          label: "Tricycle",
+          img: "https://i.pinimg.com/originals/6b/7e/92/6b7e9220cd03991423faf5c515c29bd8.gif"
+        },
+        {
+          key: "pedicab",
+          label: "Pedicab",
+          img: "assets/pedicab.png"
+        }
+      ];
+
+      const knownKeys = new Set(knownMeta.map(m => m.key));
+      const extraKeys = Object.keys(this.vehicles || {}).filter(k => !knownKeys.has(k));
+
+      // For user-added vehicles we use a fallback image
+      const extraMeta = extraKeys.map(k => ({
+        key: k,
+        label: k.charAt(0).toUpperCase() + k.slice(1),
+        img: "assets/truck.png"
+      }));
+
+      return [...knownMeta, ...extraMeta];
+    }
+  },
+  mounted() {
+    // Load vehicle counts from localStorage (shared across dashboard + summary)
+    const storedVehicles = JSON.parse(localStorage.getItem("vehiclesData"));
+    if (storedVehicles && typeof storedVehicles === "object") {
+      this.vehicles = storedVehicles;
+    }
+
+    // Keep `route` synced with URL hash and guard protected pages
+    const syncRouteFromHash = () => {
+      const hash = (window.location.hash || "").replace("#", "");
+      const allowed = new Set(["register", "dashboard", "summary"]);
+      const desiredRaw = hash || (this.isLoggedIn ? "dashboard" : "register");
+      const desired = allowed.has(desiredRaw) ? desiredRaw : (this.isLoggedIn ? "dashboard" : "register");
+      this.route = desired;
+
+      // Guard: must be logged in to view dashboard/summary
+      if (!this.isLoggedIn && (this.route === "dashboard" || this.route === "summary")) {
+        this.route = "register";
+        window.location.hash = "#register";
+      }
+    };
+
+    window.addEventListener("hashchange", syncRouteFromHash);
+    syncRouteFromHash();
+  },
+  methods: {
+    sendOtp() {
+      // Demo OTP sender (no SMS integration)
+      if (!this.contactnumber || this.contactnumber.toString().length !== 10) {
+        this.errorMessage = "Enter a valid 10-digit contact number";
+        return;
+      }
+      // Generate random 4-digit OTP
+      this.otp = Math.floor(1000 + Math.random() * 9000);
+      alert("Your OTP is: " + this.otp); // demo only
+      this.successMessage = "OTP sent! Check alert box.";
+      this.errorMessage = "";
+    },
+    register() {
+      // Register + "log in" the user
+      this.errorMessage = "";
+      this.successMessage = "";
+
+      // Basic validation
+      if (!this.username || !this.password || !this.confirmpassword || !this.contactnumber || !this.enteredOtp) {
+        this.errorMessage = "All fields are required";
+        return;
+      }
+      if (this.password !== this.confirmpassword) {
+        this.errorMessage = "Passwords do not match";
+        return;
+      }
+      if (this.contactnumber.toString().length !== 10) {
+        this.errorMessage = "Invalid contact number";
+        return;
+      }
+      if (parseInt(this.enteredOtp) !== this.otp) {
+        this.errorMessage = "Incorrect OTP";
+        return;
+      }
+      // Check if username exists
+      const exists = this.users.find(u => u.username === this.username);
+      if (exists) {
+        this.errorMessage = "Username already exists";
+        return;
+      }
+      // Save user
+      this.users.push({ username: this.username, password: this.password });
+      localStorage.setItem("users", JSON.stringify(this.users));
+      this.currentUser = this.username;
+      localStorage.setItem("currentUser", this.currentUser);
+      this.successMessage = "Registered successfully!";
+      setTimeout(() => {
+        // Navigate to dashboard inside the single-page app
+        window.location.hash = "#dashboard";
+      }, 1000); 
+      
+    },
+    logout() {
+      // End demo session and return to register screen
+      localStorage.removeItem("currentUser");
+      this.currentUser = "";
+      this.route = "register";
+      window.location.hash = "#register";
+    },
+    increment(vehicleKey, delta) {
+      // Increase/decrease count, never below 0
+      const current = Number(this.vehicles[vehicleKey] ?? 0);
+      const next = Math.max(0, current + delta);
+      this.vehicles[vehicleKey] = next;
+    },
+    addVehicle() {
+      // Add a new vehicle key safely (Vue 3 can track new object keys)
+      const vehicleNameRaw = prompt("Enter the name of the new vehicle:");
+      if (!vehicleNameRaw) return;
+
+      // Normalize input into a safe key: lowercase, underscores, alphanumerics only
+      const key = vehicleNameRaw
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9_]/g, "");
+
+      if (!key) return;
+
+      if (Object.prototype.hasOwnProperty.call(this.vehicles, key)) {
+        alert("That vehicle already exists.");
+        return;
+      }
+
+      this.vehicles[key] = 0;
+    },
+    clearCounts() {
+      // Reset all vehicle counts back to 0
+      if (confirm("Are you sure you want to reset all counts?")) {
+        for (const key of Object.keys(this.vehicles)) {
+          this.vehicles[key] = 0;
+        }
+      }
+    },
+    saveVehicles() {
+      // Persist counts so summary/dashboard stay in sync across refreshes
+      localStorage.setItem("vehiclesData", JSON.stringify(this.vehicles));
+    }
+  },
+  watch: {
+    vehicles: {
+      deep: true,
+      handler() {
+        // Auto-save whenever any vehicle count changes
+        this.saveVehicles();
+      }
+    }
+  }
+}).mount("#app");
+</script>
+
+</body>
+</html>
