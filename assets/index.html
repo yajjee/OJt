@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -81,10 +78,16 @@
 
     <!-- Dashboard -->
     <div v-if="route === 'dashboard'">
-      <h1 class="content">Dashboard</h1>
+      <h1 class="content content-with-icon">
+        <span><span class="dashboard-username">{{ currentUser }}</span>, Dashboard</span>
+        <svg class="content-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </h1>
 
       <div class="card-container">
         <div class="vehicle-card" v-for="v in vehicleCards" :key="v.key">
+          <button type="button" class="vehicle-delete" @click="deleteVehicle(v.key)" :title="'Delete ' + v.label" :aria-label="'Delete ' + v.label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
           <img :src="v.img" :alt="v.label">
           <div class="counter">
             <p>{{ v.label }}</p>
@@ -105,9 +108,13 @@
 
     <!-- Summary -->
     <div v-else-if="route === 'summary'">
-      <h1 class="content">Vehicle Summary</h1>
+      <h1 class="content content-with-icon">
+        Vehicle Summary
+        <svg class="content-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      </h1>
 
       <div class="summary-content">
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -116,6 +123,13 @@
               <th>Motorcycle</th>
               <th>Tricycle</th>
               <th>Pedicab</th>
+              <th>Car</th>
+              <th>Bicycle</th>
+              <th>Bus</th>
+              <th>Jeep</th>
+              <th>Boat</th>
+              <th>Helicopter</th>
+              <th>Total Vehicles</th>
             </tr>
           </thead>
           <tbody>
@@ -125,6 +139,13 @@
               <td>{{ userData.motorcycle || 0 }}</td>
               <td>{{ userData.tricycle || 0 }}</td>
               <td>{{ userData.pedicab || 0 }}</td>
+              <td>{{ userData.car || 0 }}</td>
+              <td>{{ userData.bicycle || 0 }}</td>
+              <td>{{ userData.bus || 0 }}</td>
+              <td>{{ userData.jeep || 0 }}</td>
+              <td>{{ userData.boat || 0 }}</td>
+              <td>{{ userData.helicopter || 0 }}</td>
+              <td><strong>{{ userData.total }}</strong></td>
             </tr>
             <tr class="total-row">
               <td><strong>Total</strong></td>
@@ -132,9 +153,17 @@
               <td><strong>{{ totalVehicles.motorcycle }}</strong></td>
               <td><strong>{{ totalVehicles.tricycle }}</strong></td>
               <td><strong>{{ totalVehicles.pedicab }}</strong></td>
+              <td><strong>{{ totalVehicles.car }}</strong></td>
+              <td><strong>{{ totalVehicles.bicycle }}</strong></td>
+              <td><strong>{{ totalVehicles.bus }}</strong></td>
+              <td><strong>{{ totalVehicles.jeep }}</strong></td>
+              <td><strong>{{ totalVehicles.boat }}</strong></td>
+              <td><strong>{{ totalVehicles.helicopter }}</strong></td>
+              <td><strong>{{ grandTotalVehicles }}</strong></td>
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -146,26 +175,29 @@
         <h2>Add Vehicle</h2>
         <button type="button" class="modal-close" @click="closeVehicleModal" aria-label="Close">&times;</button>
       </div>
-      <label>
-        Vehicle name
-        <input type="text" v-model.trim="newVehicleName" placeholder="e.g. Bus">
-      </label>
-      <label>
-        Type
-        <select v-model="newVehicleType">
-          <option value="">Select type</option>
-          <option value="truck">Truck</option>
-          <option value="motorcycle">Motorcycle</option>
-          <option value="tricycle">Tricycle</option>
-          <option value="pedicab">Pedicab</option>
-          <option value="other">Other</option>
-        </select>
-      </label>
-      <div class="modal-actions">
-        <button @click="confirmAddVehicle">Add</button>
-        <button @click="closeVehicleModal">Cancel</button>
+      <div class="modal-body">
+        <p class="error" v-if="modalError">{{ modalError }}</p>
+        <label>
+          Type
+          <select v-model="newVehicleType">
+            <option value="">Select type</option>
+            <option value="truck">Truck</option>
+            <option value="motorcycle">Motorcycle</option>
+            <option value="tricycle">Tricycle</option>
+            <option value="pedicab">Pedicab</option>
+            <option value="car">Car</option>
+            <option value="bicycle">Bicycle</option>
+            <option value="bus">Bus</option>
+            <option value="jeep">Jeep</option>
+            <option value="boat">Boat</option>
+            <option value="helicopter">Helicopter</option>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button @click="confirmAddVehicle">Add</button>
+          <button @click="closeVehicleModal">Cancel</button>
+        </div>
       </div>
-      <p class="error" v-if="modalError">{{ modalError }}</p>
     </div>
   </div>
 </div>
@@ -200,17 +232,11 @@ createApp({
       // "Session" for this demo: if present, user is considered logged in
       currentUser: localStorage.getItem("currentUser") || "",
 
-      // Vehicle counts (auto-saved to localStorage as "vehiclesData")
-      vehicles: {
-        truck: 0,
-        motorcycle: 0,
-        tricycle: 0,
-        pedicab: 0
-      },
+      // Vehicle counts (auto-saved to localStorage as "vehiclesData"). Dashboard starts empty.
+      vehicles: {},
 
       // Add-vehicle modal state
       showVehicleModal: false,
-      newVehicleName: "",
       newVehicleType: "",
       modalError: ""
     };
@@ -260,42 +286,27 @@ createApp({
       return this.password === this.confirmpassword ? "password-match" : "password-mismatch";
     },
     vehicleCards() {
-      // Default vehicle cards + metadata (labels/images).
-      // Any extra vehicles added by the user will also show up.
+      // Dashboard is empty until user adds vehicles. Only show cards for keys in this.vehicles.
       const knownMeta = [
-        {
-          key: "truck",
-          label: "Truck",
-          img: "https://assets-v2.lottiefiles.com/a/13d20d82-116b-11ee-8327-bf0f670c5933/UnKFqiCVck.gif"
-        },
-        {
-          key: "motorcycle",
-          label: "Motorcycle",
-          img: "https://cdn.dribbble.com/userupload/21376896/file/original-db00ef235443c282045c0e473a5cb689.gif"
-        },
-        {
-          key: "tricycle",
-          label: "Tricycle",
-          img: "https://i.pinimg.com/originals/6b/7e/92/6b7e9220cd03991423faf5c515c29bd8.gif"
-        },
-        {
-          key: "pedicab",
-          label: "Pedicab",
-          img: "assets/pedicab.png"
-        }
+        { key: "truck", label: "Truck", img: "assets/truck.gif" },
+        { key: "motorcycle", label: "Motorcycle", img: "assets/motorcycle.gif" },
+        { key: "tricycle", label: "Tricycle", img: "assets/tricycle.gif" },
+        { key: "pedicab", label: "Pedicab", img: "assets/pedicab.gif" },
+        { key: "car", label: "Car", img: "assets/car.gif" },
+        { key: "bicycle", label: "Bicycle", img: "assets/bicycle.gif" },
+        { key: "bus", label: "Bus", img: "assets/bus.gif" },
+        { key: "jeep", label: "Jeep", img: "assets/jeep.gif" },
+        { key: "boat", label: "Boat", img: "assets/boat.gif" },
+        { key: "helicopter", label: "Helicopter", img: "assets/helicopter.gif" }
       ];
-
-      const knownKeys = new Set(knownMeta.map(m => m.key));
-      const extraKeys = Object.keys(this.vehicles || {}).filter(k => !knownKeys.has(k));
-
-      // For user-added vehicles we use a fallback image
-      const extraMeta = extraKeys.map(k => ({
-        key: k,
-        label: k.charAt(0).toUpperCase() + k.slice(1),
-        img: "assets/truck.png"
-      }));
-
-      return [...knownMeta, ...extraMeta];
+      const defaultImg = "https://cdn-icons-png.flaticon.com/512/776/776588.png";
+      const keys = Object.keys(this.vehicles || {});
+      return keys.map(key => {
+        const m = knownMeta.find(x => x.key === key);
+        const label = m ? m.label : (key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "));
+        const img = m ? m.img : defaultImg;
+        return { key, label, img };
+      });
     },
     allUsersVehicleData() {
       // Get vehicle data for all users
@@ -303,10 +314,8 @@ createApp({
         const key = this.userVehiclesKey(user.username);
         const stored = localStorage.getItem(key);
         let storedVehicles = {
-          truck: 0,
-          motorcycle: 0,
-          tricycle: 0,
-          pedicab: 0
+          truck: 0, motorcycle: 0, tricycle: 0, pedicab: 0, car: 0, bicycle: 0,
+          bus: 0, jeep: 0, boat: 0
         };
         if (stored) {
           try {
@@ -315,32 +324,44 @@ createApp({
             // If parsing fails, use defaults
           }
         }
+        const truck = storedVehicles.truck || 0, motorcycle = storedVehicles.motorcycle || 0,
+          tricycle = storedVehicles.tricycle || 0, pedicab = storedVehicles.pedicab || 0,
+          car = storedVehicles.car || 0, bicycle = storedVehicles.bicycle || 0,
+          bus = storedVehicles.bus || 0, jeep = storedVehicles.jeep || 0,
+          boat = storedVehicles.boat || 0, helicopter = storedVehicles.helicopter || 0;
         return {
           username: user.username,
-          truck: storedVehicles.truck || 0,
-          motorcycle: storedVehicles.motorcycle || 0,
-          tricycle: storedVehicles.tricycle || 0,
-          pedicab: storedVehicles.pedicab || 0
+          truck, motorcycle, tricycle, pedicab, car, bicycle, bus, jeep, boat, helicopter,
+          total: truck + motorcycle + tricycle + pedicab + car + bicycle + bus + jeep + boat + helicopter
         };
       });
     },
     totalVehicles() {
       // Calculate totals across all users
       const totals = {
-        truck: 0,
-        motorcycle: 0,
-        tricycle: 0,
-        pedicab: 0
+        truck: 0, motorcycle: 0, tricycle: 0, pedicab: 0, car: 0, bicycle: 0,
+        bus: 0, jeep: 0, boat: 0, helicopter: 0
       };
-      
+
       this.allUsersVehicleData.forEach(userData => {
         totals.truck += userData.truck || 0;
         totals.motorcycle += userData.motorcycle || 0;
         totals.tricycle += userData.tricycle || 0;
         totals.pedicab += userData.pedicab || 0;
+        totals.car += userData.car || 0;
+        totals.bicycle += userData.bicycle || 0;
+        totals.bus += userData.bus || 0;
+        totals.jeep += userData.jeep || 0;
+        totals.boat += userData.boat || 0;
+        totals.helicopter += userData.helicopter || 0;
       });
-      
+
       return totals;
+    },
+    grandTotalVehicles() {
+      const t = this.totalVehicles;
+      return (t.truck || 0) + (t.motorcycle || 0) + (t.tricycle || 0) + (t.pedicab || 0) +
+        (t.car || 0) + (t.bicycle || 0) + (t.bus || 0) + (t.jeep || 0) + (t.boat || 0) + (t.helicopter || 0);
     }
   },
   mounted() {
@@ -378,26 +399,15 @@ createApp({
     },
     loadVehiclesForCurrentUser() {
       if (!this.currentUser) {
-        // default blank vehicles if no user
-        this.vehicles = {
-          truck: 0,
-          motorcycle: 0,
-          tricycle: 0,
-          pedicab: 0
-        };
+        this.vehicles = {};
         return;
       }
       const key = this.userVehiclesKey(this.currentUser);
       const storedVehicles = JSON.parse(localStorage.getItem(key));
       if (storedVehicles && typeof storedVehicles === "object") {
-        this.vehicles = storedVehicles;
+        this.vehicles = { ...storedVehicles };
       } else {
-        this.vehicles = {
-          truck: 0,
-          motorcycle: 0,
-          tricycle: 0,
-          pedicab: 0
-        };
+        this.vehicles = {};
       }
     },
     sendOtp() {
@@ -530,7 +540,6 @@ createApp({
       this.vehicles[vehicleKey] = next;
     },
     openVehicleModal() {
-      this.newVehicleName = "";
       this.newVehicleType = "";
       this.modalError = "";
       this.showVehicleModal = true;
@@ -540,32 +549,26 @@ createApp({
     },
     confirmAddVehicle() {
       this.modalError = "";
-      const vehicleNameRaw = this.newVehicleName;
-
-      if (!vehicleNameRaw) {
-        this.modalError = "Vehicle name is required";
-        return;
-      }
-
-      // Normalize input into a safe key: lowercase, underscores, alphanumerics only
-      const key = vehicleNameRaw
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_")
-        .replace(/[^a-z0-9_]/g, "");
+      const key = this.newVehicleType?.trim().toLowerCase();
 
       if (!key) {
-        this.modalError = "Vehicle name is invalid";
+        this.modalError = "Please select a vehicle type.";
         return;
       }
 
       if (Object.prototype.hasOwnProperty.call(this.vehicles, key)) {
-        this.modalError = "That vehicle already exists.";
+        this.modalError = "That vehicle type already exists.";
         return;
       }
 
       this.vehicles[key] = 0;
       this.showVehicleModal = false;
+    },
+    deleteVehicle(vehicleKey) {
+      if (!confirm(`Remove "${vehicleKey}" from your vehicles?`)) return;
+      const next = { ...this.vehicles };
+      delete next[vehicleKey];
+      this.vehicles = next;
     },
     saveVehicles() {
       // Persist counts so summary/dashboard stay in sync across refreshes

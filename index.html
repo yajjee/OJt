@@ -10,8 +10,26 @@
 <body>
 
 <div id="app">
+  <!-- Logging Out Screen -->
+  <div v-if="showLogoutScreen" class="logout-screen">
+    <div class="logout-screen-content">
+      <img src="https://cdn-icons-png.flaticon.com/512/776/776588.png" alt="Vehicle" class="logout-screen-icon">
+      <h2 class="logout-screen-title">Logging out...</h2>
+      <p class="logout-screen-subtitle">See you soon!</p>
+    </div>
+  </div>
+
+  <!-- Loading Screen (after login/register) -->
+  <div v-if="showLoadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <img src="https://cdn-icons-png.flaticon.com/512/776/776588.png" alt="Vehicle" class="loading-icon loading-icon-beat">
+      <h2 class="loading-title">{{ loadingMessage }}</h2>
+      <p class="loading-subtitle">Taking you to your dashboard...</p>
+    </div>
+  </div>
+
   <!-- Auth (Login / Register) -->
-  <div v-if="route === 'login' || route === 'register'" class="auth-layout">
+  <div v-if="(route === 'login' || route === 'register') && !showLoadingScreen" class="auth-layout">
     <div class="auth-curve-banner">
       <div class="auth-brand">
         <img src="https://cdn-icons-png.flaticon.com/512/776/776588.png" alt="Vehicle" class="auth-vehicle-icon">
@@ -22,7 +40,13 @@
       <!-- LOGIN FORM -->
       <div v-if="route === 'login'" class="auth-form">
         <input type="text" placeholder="Username" v-model.trim="username">
-        <input type="password" placeholder="Password" v-model="password">
+        <div class="password-input-wrap">
+          <input :type="showPassword ? 'text' : 'password'" placeholder="Password" v-model="password">
+          <button type="button" class="password-toggle" @click="showPassword = !showPassword" :title="showPassword ? 'Hide password' : 'Show password'" :aria-label="showPassword ? 'Hide password' : 'Show password'">
+            <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
         <button class="auth-submit" @click="login">Login</button>
         <p class="switch-auth">
           Don't have an account?
@@ -33,11 +57,23 @@
       <!-- REGISTER FORM -->
       <div v-else class="auth-form">
         <input type="text" placeholder="Username" v-model.trim="username">
-        <input type="password" placeholder="Password" v-model="password">
+        <div class="password-input-wrap">
+          <input :type="showPassword ? 'text' : 'password'" placeholder="Password" v-model="password">
+          <button type="button" class="password-toggle" @click="showPassword = !showPassword" :title="showPassword ? 'Hide password' : 'Show password'" :aria-label="showPassword ? 'Hide password' : 'Show password'">
+            <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
         <p class="password-hint" :class="passwordStrengthClass" v-if="password">
           Strength: {{ passwordStrength }}
         </p>
-        <input type="password" placeholder="Confirm Password" v-model="confirmpassword">
+        <div class="password-input-wrap">
+          <input :type="showConfirmPassword ? 'text' : 'password'" placeholder="Confirm Password" v-model="confirmpassword">
+          <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword" :title="showConfirmPassword ? 'Hide password' : 'Show password'" :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'">
+            <svg v-if="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
         <p class="password-confirm-hint" :class="confirmPasswordClass" v-if="confirmpassword">
           {{ confirmPasswordMessage }}
         </p>
@@ -61,7 +97,7 @@
   </div>
 
   <!-- App (Dashboard/Summary) -->
-  <div v-else class="app-layout">
+  <div v-else-if="!showLoadingScreen" class="app-layout">
     <header class="dashboard-header">
       <div class="dashboard-curve-banner">
         <div class="dashboard-brand">
@@ -71,18 +107,21 @@
         <nav class="dashboard-nav">
           <a href="#dashboard" class="dashboard-nav-link" :class="{ active: route === 'dashboard' }">Home</a>
           <a href="#summary" class="dashboard-nav-link" :class="{ active: route === 'summary' }">Summary</a>
-          <button class="dashboard-logout" @click="logout">Logout</button>
+          <button class="dashboard-logout" @click="openLogoutModal">Logout</button>
         </nav>
       </div>
     </header>
 
     <!-- Dashboard -->
     <div v-if="route === 'dashboard'">
-      <h1 class="content"><span class="dashboard-username">{{ currentUser }}</span>, Dashboard</h1>
+      <h1 class="content content-with-icon">
+        <span><span class="dashboard-username">{{ currentUser }}</span>, Dashboard</span>
+        <svg class="content-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </h1>
 
       <div class="card-container">
         <div class="vehicle-card" v-for="v in vehicleCards" :key="v.key">
-          <button type="button" class="vehicle-delete" @click="deleteVehicle(v.key)" :title="'Delete ' + v.label" :aria-label="'Delete ' + v.label">
+          <button type="button" class="vehicle-delete" @click="openDeleteVehicleModal(v)" :title="'Delete ' + v.label" :aria-label="'Delete ' + v.label">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>
           <img :src="v.img" :alt="v.label">
@@ -105,9 +144,13 @@
 
     <!-- Summary -->
     <div v-else-if="route === 'summary'">
-      <h1 class="content">Vehicle Summary</h1>
+      <h1 class="content content-with-icon">
+        Vehicle Summary
+        <svg class="content-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      </h1>
 
       <div class="summary-content">
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -121,6 +164,8 @@
               <th>Bus</th>
               <th>Jeep</th>
               <th>Boat</th>
+              <th>Helicopter</th>
+              <th>Total Vehicles</th>
             </tr>
           </thead>
           <tbody>
@@ -135,6 +180,8 @@
               <td>{{ userData.bus || 0 }}</td>
               <td>{{ userData.jeep || 0 }}</td>
               <td>{{ userData.boat || 0 }}</td>
+              <td>{{ userData.helicopter || 0 }}</td>
+              <td><strong>{{ userData.total }}</strong></td>
             </tr>
             <tr class="total-row">
               <td><strong>Total</strong></td>
@@ -147,9 +194,53 @@
               <td><strong>{{ totalVehicles.bus }}</strong></td>
               <td><strong>{{ totalVehicles.jeep }}</strong></td>
               <td><strong>{{ totalVehicles.boat }}</strong></td>
+              <td><strong>{{ totalVehicles.helicopter }}</strong></td>
+              <td><strong>{{ grandTotalVehicles }}</strong></td>
             </tr>
           </tbody>
         </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div v-if="showLogoutModal" class="modal-backdrop" @click.self="closeLogoutModal">
+    <div class="modal logout-modal">
+      <div class="logout-modal-header">
+        <div class="logout-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <h2>Logout</h2>
+        <button type="button" class="modal-close" @click="closeLogoutModal" aria-label="Close">&times;</button>
+      </div>
+      <div class="logout-modal-body">
+        <p class="logout-message">Are you sure you want to logout?</p>
+        <div class="logout-modal-actions">
+          <button class="logout-cancel" @click="closeLogoutModal">Cancel</button>
+          <button class="logout-confirm" @click="confirmLogout">Yes, Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Vehicle Confirmation Modal -->
+  <div v-if="showDeleteVehicleModal" class="modal-backdrop" @click.self="closeDeleteVehicleModal">
+    <div class="modal delete-vehicle-modal">
+      <div class="delete-vehicle-modal-header">
+        <div class="delete-vehicle-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </div>
+        <h2>Remove Vehicle</h2>
+        <button type="button" class="modal-close" @click="closeDeleteVehicleModal" aria-label="Close">&times;</button>
+      </div>
+      <div class="delete-vehicle-modal-body">
+        <img v-if="vehicleToDelete" :src="vehicleToDelete.img" :alt="vehicleToDelete.label" class="delete-vehicle-preview">
+        <p class="delete-vehicle-message">Are you sure you want to remove <strong>{{ vehicleToDelete ? vehicleToDelete.label : '' }}</strong> from your vehicles?<br><span class="delete-vehicle-hint">This will reset its count to zero.</span></p>
+        <div class="delete-vehicle-modal-actions">
+          <button class="delete-vehicle-cancel" @click="closeDeleteVehicleModal">Cancel</button>
+          <button class="delete-vehicle-confirm" @click="confirmDeleteVehicle">Yes, Remove</button>
+        </div>
       </div>
     </div>
   </div>
@@ -176,6 +267,7 @@
             <option value="bus">Bus</option>
             <option value="jeep">Jeep</option>
             <option value="boat">Boat</option>
+            <option value="helicopter">Helicopter</option>
           </select>
         </label>
         <div class="modal-actions">
@@ -202,6 +294,8 @@ createApp({
       password: "",
       confirmpassword: "",
       contactnumber: "",
+      showPassword: false,
+      showConfirmPassword: false,
 
       // OTP is demo-only (shown in alert)
       otp: null,          // generated OTP
@@ -223,7 +317,19 @@ createApp({
       // Add-vehicle modal state
       showVehicleModal: false,
       newVehicleType: "",
-      modalError: ""
+      modalError: "",
+
+      // Logout confirmation modal
+      showLogoutModal: false,
+      showLogoutScreen: false,
+
+      // Delete vehicle confirmation modal
+      showDeleteVehicleModal: false,
+      vehicleToDelete: null,
+
+      // Loading screen (after login/register)
+      showLoadingScreen: false,
+      loadingMessage: ""
     };
   },
   computed: {
@@ -281,7 +387,8 @@ createApp({
         { key: "bicycle", label: "Bicycle", img: "assets/bicycle.gif" },
         { key: "bus", label: "Bus", img: "assets/bus.gif" },
         { key: "jeep", label: "Jeep", img: "assets/jeep.gif" },
-        { key: "boat", label: "Boat", img: "assets/boat.gif" }
+        { key: "boat", label: "Boat", img: "assets/boat.gif" },
+        { key: "helicopter", label: "Helicopter", img: "assets/helicopter.gif" }
       ];
       const defaultImg = "https://cdn-icons-png.flaticon.com/512/776/776588.png";
       const keys = Object.keys(this.vehicles || {});
@@ -308,17 +415,15 @@ createApp({
             // If parsing fails, use defaults
           }
         }
+        const truck = storedVehicles.truck || 0, motorcycle = storedVehicles.motorcycle || 0,
+          tricycle = storedVehicles.tricycle || 0, pedicab = storedVehicles.pedicab || 0,
+          car = storedVehicles.car || 0, bicycle = storedVehicles.bicycle || 0,
+          bus = storedVehicles.bus || 0, jeep = storedVehicles.jeep || 0,
+          boat = storedVehicles.boat || 0, helicopter = storedVehicles.helicopter || 0;
         return {
           username: user.username,
-          truck: storedVehicles.truck || 0,
-          motorcycle: storedVehicles.motorcycle || 0,
-          tricycle: storedVehicles.tricycle || 0,
-          pedicab: storedVehicles.pedicab || 0,
-          car: storedVehicles.car || 0,
-          bicycle: storedVehicles.bicycle || 0,
-          bus: storedVehicles.bus || 0,
-          jeep: storedVehicles.jeep || 0,
-          boat: storedVehicles.boat || 0
+          truck, motorcycle, tricycle, pedicab, car, bicycle, bus, jeep, boat, helicopter,
+          total: truck + motorcycle + tricycle + pedicab + car + bicycle + bus + jeep + boat + helicopter
         };
       });
     },
@@ -326,7 +431,7 @@ createApp({
       // Calculate totals across all users
       const totals = {
         truck: 0, motorcycle: 0, tricycle: 0, pedicab: 0, car: 0, bicycle: 0,
-        bus: 0, jeep: 0, boat: 0
+        bus: 0, jeep: 0, boat: 0, helicopter: 0
       };
 
       this.allUsersVehicleData.forEach(userData => {
@@ -339,9 +444,15 @@ createApp({
         totals.bus += userData.bus || 0;
         totals.jeep += userData.jeep || 0;
         totals.boat += userData.boat || 0;
+        totals.helicopter += userData.helicopter || 0;
       });
-      
+
       return totals;
+    },
+    grandTotalVehicles() {
+      const t = this.totalVehicles;
+      return (t.truck || 0) + (t.motorcycle || 0) + (t.tricycle || 0) + (t.pedicab || 0) +
+        (t.car || 0) + (t.bicycle || 0) + (t.bus || 0) + (t.jeep || 0) + (t.boat || 0) + (t.helicopter || 0);
     }
   },
   mounted() {
@@ -408,6 +519,8 @@ createApp({
       this.password = "";
       this.confirmpassword = "";
       this.enteredOtp = null;
+      this.showPassword = false;
+      this.showConfirmPassword = false;
       this.route = "login";
       window.location.hash = "#login";
     },
@@ -417,6 +530,8 @@ createApp({
       this.password = "";
       this.confirmpassword = "";
       this.enteredOtp = null;
+      this.showPassword = false;
+      this.showConfirmPassword = false;
       this.route = "register";
       window.location.hash = "#register";
     },
@@ -442,9 +557,12 @@ createApp({
       localStorage.setItem("currentUser", this.currentUser);
       this.loadVehiclesForCurrentUser();
       this.successMessage = "Login successful!";
+      this.loadingMessage = "Welcome back, " + user.username + "!";
+      this.showLoadingScreen = true;
       setTimeout(() => {
+        this.showLoadingScreen = false;
         window.location.hash = "#dashboard";
-      }, 500);
+      }, 2200);
     },
     register() {
       // Register + "log in" the user
@@ -497,19 +615,42 @@ createApp({
       localStorage.setItem("users", JSON.stringify(this.users));
       this.currentUser = this.username;
       localStorage.setItem("currentUser", this.currentUser);
-       // Create a fresh vehicle set for this new user
       this.loadVehiclesForCurrentUser();
       this.successMessage = "Registered successfully!";
+      this.loadingMessage = "Welcome, " + this.username + "!";
+      this.showLoadingScreen = true;
       setTimeout(() => {
-        // Navigate to dashboard inside the single-page app
+        this.showLoadingScreen = false;
         window.location.hash = "#dashboard";
-      }, 1000); 
-      
+      }, 2200);
+    },
+    openLogoutModal() {
+      this.showLogoutModal = true;
+    },
+    closeLogoutModal() {
+      this.showLogoutModal = false;
+    },
+    confirmLogout() {
+      this.closeLogoutModal();
+      this.showLogoutScreen = true;
+      setTimeout(() => {
+        this.showLogoutScreen = false;
+        this.logout();
+      }, 1800);
     },
     logout() {
-      // End demo session and return to register screen
+      // End demo session and clear auth form fields
       localStorage.removeItem("currentUser");
       this.currentUser = "";
+      this.username = "";
+      this.password = "";
+      this.confirmpassword = "";
+      this.contactnumber = "";
+      this.enteredOtp = null;
+      this.showPassword = false;
+      this.showConfirmPassword = false;
+      this.errorMessage = "";
+      this.successMessage = "";
       this.route = "login";
       window.location.hash = "#login";
     },
@@ -544,8 +685,21 @@ createApp({
       this.vehicles[key] = 0;
       this.showVehicleModal = false;
     },
+    openDeleteVehicleModal(v) {
+      this.vehicleToDelete = v;
+      this.showDeleteVehicleModal = true;
+    },
+    closeDeleteVehicleModal() {
+      this.showDeleteVehicleModal = false;
+      this.vehicleToDelete = null;
+    },
+    confirmDeleteVehicle() {
+      if (this.vehicleToDelete) {
+        this.deleteVehicle(this.vehicleToDelete.key);
+        this.closeDeleteVehicleModal();
+      }
+    },
     deleteVehicle(vehicleKey) {
-      if (!confirm(`Remove "${vehicleKey}" from your vehicles?`)) return;
       const next = { ...this.vehicles };
       delete next[vehicleKey];
       this.vehicles = next;
